@@ -39,7 +39,7 @@
             links: [
                 {
                     title: 'Test Link',
-                    url: 'https://bored.com',
+                    url: 'https://www.nasa.gov/multimedia/imagegallery/iotd.html',
                     icon: 'custom'
                 }
             ]
@@ -50,11 +50,25 @@
         username = '';
         isAvailable = false;
     }
-    
+
+    const re = /^(?=[a-zA-Z0-9._]{3,16}$)(?!.*[_.]{2})[^_.].*[^_.]$/;
+  
+  $: isValid = username?.length > 2 && username.length < 16 && re.test(username);
+  $: isTouched = username.length > 0;
+  $: isTaken = isValid && !isAvailable && !loading
+
 </script>
 
 <AuthCheck>
-    <h2>Username</h2>
+    {#if $userData.username}
+        <p class="">
+            Your username is <span class="">
+                @{$userData.username}
+            </span>
+        </p>
+        <p class="">(usernames cannot be changed)</p>
+        <a class="" href="/login/photo">Upload Profile Image</a>
+    {:else}    
     <form class="w-2/5" on:submit|preventDefault={confirmUsername}>
         <input
             type="text"
@@ -62,10 +76,30 @@
             class="input w-full"
             bind:value={username}
             on:input={checkAvailability}
+            class:input-error={(!isValid && isTouched)}
+            class:input-warning={isTaken}
+            class:input-success={isAvailable && isValid && !loading}
         />
+        <div class="my-4 min-h-16 px-8 w-full">
+            {#if loading}
+                <p class="text-secondary">Checking availability of @{username}...</p>
+            {/if}
 
-        <p>Is available? {isAvailable}</p>
+            {#if !isValid && isTouched}
+                <p class="text-error text-sm">
+                    must be 3-16 characters long, alphanumeric only
+                </p>
+            {/if}
 
-        <button class="btn btn-succoss">Confirm username @{username} </button>
+            {#if isValid && !isAvailable && !loading}
+            <p class="text-warning text-sm">
+                @{username} is not available :(
+            </p>
+            {/if}
+        </div>
+
+        {#if isAvailable}
+            <button class="btn btn-succoss">Confirm username @{username} </button>
+        {/if}
     </form>
 </AuthCheck>
