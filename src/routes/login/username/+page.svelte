@@ -1,6 +1,6 @@
 <script lang="ts">
     import AuthCheck from "$lib/components/AuthCheck.svelte";
-    import { db, user } from "$lib/firebase";
+    import { db, user, userData } from "$lib/firebase";
     import { doc, getDoc, writeBatch } from "firebase/firestore";
 
     let username = "";
@@ -9,9 +9,20 @@
 
     let debounceTimer: NodeJS.Timeout;
 
+    const re = /^(?=[a-zA-Z0-9._]{3,16}$)(?!.*[_.]{2})[^_.].*[^_.]$/;
+  
+    $: isValid = username?.length > 2 && username.length < 16 && re.test(username);
+    $: isTouched = username.length > 0;
+    $: isTaken = isValid && !isAvailable && !loading
+
+
     async function checkAvailability() {
         isAvailable = false;
         clearTimeout(debounceTimer);
+        if (!isValid) {
+            loading = false;
+            return;
+        }
 
         loading = true;
 
@@ -47,27 +58,20 @@
 
         await batch.commit();
 
-        username = '';
+        username = "";
         isAvailable = false;
     }
-
-    const re = /^(?=[a-zA-Z0-9._]{3,16}$)(?!.*[_.]{2})[^_.].*[^_.]$/;
-  
-  $: isValid = username?.length > 2 && username.length < 16 && re.test(username);
-  $: isTouched = username.length > 0;
-  $: isTaken = isValid && !isAvailable && !loading
-
 </script>
 
 <AuthCheck>
-    {#if $userData.username}
-        <p class="">
-            Your username is <span class="">
+    {#if $userData?.username}
+        <p class="text-lg">
+            Your username is <span class="text-succes font-bold">
                 @{$userData.username}
             </span>
         </p>
-        <p class="">(usernames cannot be changed)</p>
-        <a class="" href="/login/photo">Upload Profile Image</a>
+        <p class="text-sm">(usernames cannot be changed)</p>
+        <a class="btn btn-primary" href="/login/photo">Upload Profile Image</a>
     {:else}    
     <form class="w-2/5" on:submit|preventDefault={confirmUsername}>
         <input
@@ -93,7 +97,7 @@
 
             {#if isValid && !isAvailable && !loading}
             <p class="text-warning text-sm">
-                @{username} is not available :(
+                @{username} is not available ☹️
             </p>
             {/if}
         </div>
@@ -102,4 +106,5 @@
             <button class="btn btn-succoss">Confirm username @{username} </button>
         {/if}
     </form>
+    {/if}
 </AuthCheck>
